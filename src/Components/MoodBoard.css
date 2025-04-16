@@ -1,0 +1,745 @@
+/* MoodBoard.css - with responsive design */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+.style-sourcebook {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+}
+
+.flexcenter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Typography Utilities */
+.m-0 {
+    margin: 0;
+}
+
+.my-5 {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.mt-0 {
+    margin-top: 0;
+}
+
+.pb-0 {
+    padding-bottom: 0;
+}
+
+.pt-0 {
+    padding-top: 0;
+}
+
+.mb-0 {
+    margin-bottom: 0;
+}
+
+.py-5 {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.w-100 {
+    width: 100%;
+}
+
+/* Header Styles */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #333;
+    color: white;
+    padding: 10px 20px;
+    height: 60px;
+}
+
+.logo {
+    display: flex;
+    flex-direction: column;
+}
+
+.logo h1 {
+    font-size: 20px;
+    letter-spacing: 4px;
+    margin: 0;
+}
+
+.logo p {
+    font-size: 10px;
+    letter-spacing: 1px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.header-btn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 5px 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.header-btn:hover {
+    background-color: white;
+    color: black;
+}
+
+.icon {
+    font-size: 14px;
+}
+
+/* Main Content */
+.main-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 100px;
+    min-width: 80px;
+    background-color: #444;
+    color: white;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-item {
+    padding: 15px 5px;
+    text-align: center;
+    font-size: 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #555;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-item:hover,
+.sidebar-item.active {
+    background-color: #555;
+}
+
+/* Products Panel */
+.products-panel {
+    width: 375px;
+    background-color: #f8f8f8;
+    border-right: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+/* Search and Filters */
+.search-filters {
+    padding: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.search-box {
+    display: flex;
+    flex: 1;
+    border: 1px solid #ccc;
+    background-color: white;
+}
+
+.search-box input {
+    flex: 1;
+    border: none;
+    padding: 8px 10px;
+    outline: none;
+    font-size: 14px;
+}
+
+.search-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0 10px;
+    font-size: 14px;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.filter-btn {
+    width: 36px;
+    height: 36px;
+    background-color: white;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+/* Dropdown Filters */
+.dropdown-filters {
+    padding: 0 15px 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.filter-dropdown {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: white;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+}
+
+/* Product Grid */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.product-item {
+    aspect-ratio: 1/1;
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.product-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Product List Footer */
+.product-list-footer {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background-color: #f0f0f0;
+    border-top: 1px solid #e0e0e0;
+    margin-top: auto;
+}
+
+.product-count,
+.product-total {
+    font-size: 14px;
+    color: #777;
+    flex: 1;
+}
+
+.view-list-btn {
+    background-color: #e4e4e4;
+    border: none;
+    padding: 8px 15px;
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+.view-list-btn:hover {
+    background-color: #d4d4d4;
+}
+
+/* Canvas Area */
+.canvas-area {
+    flex: 1;
+    background-color: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: auto;
+    padding: 20px;
+}
+
+.mood-board-canvas {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform-origin: top left;
+}
+
+.mood-board-placeholder {
+    text-align: center;
+    color: #ccc;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    width: 80%;
+}
+
+.mood-board-placeholder h2 {
+    font-size: 32px;
+    font-weight: normal;
+    margin-bottom: 10px;
+}
+
+.mood-board-placeholder p {
+    font-size: 16px;
+}
+
+/* Canvas Size Selector */
+.canvas-size-selector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    max-width: 90%;
+}
+
+.canvas-size-selector h2 {
+    margin-bottom: 30px;
+    font-weight: normal;
+    color: #333;
+    font-size: clamp(18px, 4vw, 24px);
+}
+
+.canvas-size-options {
+    display: flex;
+    gap: 40px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.canvas-size-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.size-preview {
+    border: 2px solid #ccc;
+    margin-bottom: 10px;
+}
+
+.size-preview.square {
+    width: 150px;
+    height: 150px;
+    max-width: 40vw;
+    max-height: 40vw;
+}
+
+.size-preview.rectangle {
+    width: 180px;
+    height: 135px;
+    max-width: 50vw;
+    max-height: calc(50vw * 0.75);
+}
+
+.size-label {
+    font-size: 16px;
+    color: #666;
+}
+
+.get-started-btn {
+    padding: 12px 30px;
+    background-color: #d0d0c0;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.2s;
+}
+
+.get-started-btn:hover {
+    background-color: #c0c0b0;
+}
+
+/* Canvas Items */
+.canvas-item {
+    cursor: move;
+    box-sizing: border-box;
+    user-select: none;
+}
+
+.canvas-item.selected {
+    box-shadow: 0 0 0 2px #3498db;
+}
+
+/* Editing Panel */
+.editing-panel {
+    width: 150px;
+    background-color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+}
+
+.editing-header {
+    padding: 15px 10px;
+    text-align: center;
+    background-color: #d0d0d0;
+    border-bottom: 1px solid #c0c0c0;
+    font-size: 14px;
+}
+
+.editing-tools {
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    gap: 20px;
+}
+
+.tool {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.tool:hover {
+    background-color: #d0d0d0;
+}
+
+.tool.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.tool-icon {
+    font-size: 20px;
+    margin-bottom: 5px;
+}
+
+.tool-name {
+    font-size: 12px;
+    color: #666;
+}
+
+.scale-tools {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+/* Mobile Menu Button (only visible on small screens) */
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 5px;
+}
+
+/* Responsive Layout Adjustments */
+@media (max-width: 1200px) {
+    .mood-board-canvas {
+        transform: scale(0.9);
+    }
+}
+
+@media (max-width: 992px) {
+    .main-content {
+        flex-wrap: wrap;
+        overflow-y: auto;
+    }
+    
+    .products-panel {
+        width: calc(100% - 100px);
+        order: 1;
+    }
+    
+    .editing-panel {
+        width: 100%;
+        order: 2;
+        flex-direction: row;
+        flex-wrap: wrap;
+        padding: 10px;
+    }
+    
+    .editing-header {
+        width: 100%;
+        text-align: left;
+        padding: 10px 15px;
+    }
+    
+    .editing-tools {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+        gap: 10px;
+    }
+    
+    .tool {
+        flex-direction: row;
+        gap: 5px;
+        padding: 5px 10px;
+    }
+    
+    .tool-icon {
+        margin-bottom: 0;
+    }
+    
+    .scale-tools {
+        width: auto;
+        gap: 10px;
+    }
+    
+    .canvas-area {
+        width: 100%;
+        order: 3;
+        height: 500px;
+    }
+    
+    .mood-board-canvas {
+        transform: scale(0.8);
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        padding: 10px;
+    }
+    
+    .header-actions {
+        gap: 5px;
+    }
+    
+    .header-btn {
+        padding: 5px;
+        font-size: 12px;
+    }
+    
+    .header-btn span:not(.icon) {
+        display: none;
+    }
+    
+    .mobile-menu-btn {
+        display: block;
+    }
+    
+    .sidebar {
+        position: fixed;
+        left: -100px;
+        top: 60px;
+        bottom: 0;
+        z-index: 100;
+        transition: left 0.3s ease;
+    }
+    
+    .sidebar.show {
+        left: 0;
+    }
+    
+    .products-panel {
+        width: 100%;
+    }
+    
+    .product-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .mood-board-canvas {
+        transform: scale(0.7);
+    }
+    
+    /* Adjust mood board placeholder for mobile */
+    .mood-board-placeholder h2 {
+        font-size: 24px;
+    }
+    
+    .mood-board-placeholder p {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 576px) {
+    .header {
+        height: auto;
+        flex-wrap: wrap;
+    }
+    
+    .logo {
+        margin-bottom: 5px;
+    }
+    
+    .header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .search-filters {
+        flex-direction: column;
+    }
+    
+    .filter-buttons {
+        justify-content: flex-end;
+    }
+    
+    .product-grid {
+        grid-template-columns: repeat(1, 1fr);
+    }
+    
+    .product-list-footer {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .view-list-btn {
+        width: 100%;
+    }
+    
+    .canvas-size-selector h2 {
+        font-size: 18px;
+    }
+    
+    .canvas-size-options {
+        gap: 20px;
+    }
+    
+    .mood-board-canvas {
+        transform: scale(0.5);
+        transform-origin: top center;
+    }
+}
+
+/* Mobile Navigation Toggle */
+.mobile-nav-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+}
+
+.mobile-nav-overlay.show {
+    display: block;
+}
+
+/* Canvas zoom controls for mobile/responsive view */
+.canvas-zoom-controls {
+    display: none;
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    padding: 5px;
+}
+
+.zoom-btn {
+    width: 30px;
+    height: 30px;
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.zoom-btn:hover {
+    background-color: #f0f0f0;
+}
+
+@media (max-width: 992px) {
+    .canvas-zoom-controls {
+        display: flex;
+    }
+}
+
+/* Touch device optimizations */
+@media (pointer: coarse) {
+    .canvas-item {
+        min-width: 80px;
+        min-height: 80px;
+    }
+    
+    .tool {
+        padding: 10px;
+    }
+    
+    .tool-icon {
+        font-size: 24px;
+    }
+    
+    .tool-name {
+        font-size: 14px;
+    }
+}
+
+/* Prevent canvas overflow on small screens */
+@media (max-height: 700px) {
+    .canvas-area {
+        height: auto;
+        min-height: 400px;
+    }
+}
+
+/* Print media query for downloading mood boards */
+@media print {
+    .header, .sidebar, .products-panel, .editing-panel, .canvas-zoom-controls {
+        display: none !important;
+    }
+    
+    .style-sourcebook {
+        height: auto;
+    }
+    
+    .main-content {
+        display: block;
+    }
+    
+    .canvas-area {
+        padding: 0;
+        overflow: visible;
+        height: auto;
+    }
+    
+    .mood-board-canvas {
+        transform: none !important;
+        margin: 0 auto;
+        box-shadow: none;
+        border: none;
+    }
+}
