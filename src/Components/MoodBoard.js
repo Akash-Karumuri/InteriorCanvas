@@ -312,40 +312,63 @@ const MoodBoard = () => {
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', handleMouseUp);
   };
+// Replace the handleBringForward function with this one:
+const handleBringForward = () => {
+  if (!selectedItem) return;
+  
+  // Get all items sorted by their z-index
+  const sortedItems = [...canvasItems].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+  
+  // Find the index of the selected item in the sorted array
+  const selectedIndex = sortedItems.findIndex(item => item.id === selectedItem.id);
+  
+  // If this is already the topmost item, do nothing
+  if (selectedIndex === sortedItems.length - 1) return;
+  
+  // Otherwise, swap z-indexes with the item above it
+  const itemAbove = sortedItems[selectedIndex + 1];
+  
+  const newItems = canvasItems.map(item => {
+    if (item.id === selectedItem.id) {
+      return { ...item, zIndex: itemAbove.zIndex || 0 };
+    } else if (item.id === itemAbove.id) {
+      return { ...item, zIndex: selectedItem.zIndex || 0 };
+    }
+    return item;
+  });
+  
+  setCanvasItems(newItems);
+  saveToHistory(newItems);
+};
 
-  // Bring item forward
-  const handleBringForward = () => {
-    if (!selectedItem) return;
-    
-    const newItems = canvasItems.map(item => {
-      // Find maximum z-index
-      const maxZ = Math.max(...canvasItems.map(item => item.zIndex || 0));
-      
-      return item.id === selectedItem.id
-        ? { ...item, zIndex: maxZ + 1 }
-        : item;
-    });
-    
-    setCanvasItems(newItems);
-    saveToHistory(newItems);
-  };
-
-  // Send item backward
-  const handleSendBackward = () => {
-    if (!selectedItem) return;
-    
-    const newItems = canvasItems.map(item => {
-      // Find minimum z-index
-      const minZ = Math.min(...canvasItems.map(item => item.zIndex || 0));
-      
-      return item.id === selectedItem.id
-        ? { ...item, zIndex: minZ - 1 }
-        : item;
-    });
-    
-    setCanvasItems(newItems);
-    saveToHistory(newItems);
-  };
+// Replace the handleSendBackward function with this one:
+const handleSendBackward = () => {
+  if (!selectedItem) return;
+  
+  // Get all items sorted by their z-index
+  const sortedItems = [...canvasItems].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+  
+  // Find the index of the selected item in the sorted array
+  const selectedIndex = sortedItems.findIndex(item => item.id === selectedItem.id);
+  
+  // If this is already the bottommost item, do nothing
+  if (selectedIndex === 0) return;
+  
+  // Otherwise, swap z-indexes with the item below it
+  const itemBelow = sortedItems[selectedIndex - 1];
+  
+  const newItems = canvasItems.map(item => {
+    if (item.id === selectedItem.id) {
+      return { ...item, zIndex: itemBelow.zIndex || 0 };
+    } else if (item.id === itemBelow.id) {
+      return { ...item, zIndex: selectedItem.zIndex || 0 };
+    }
+    return item;
+  });
+  
+  setCanvasItems(newItems);
+  saveToHistory(newItems);
+};
 
   // Clone item
   const handleClone = () => {
