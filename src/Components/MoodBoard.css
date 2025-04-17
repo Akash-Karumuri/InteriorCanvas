@@ -400,6 +400,7 @@
     background-color: #e0e0e0;
     display: flex;
     flex-direction: column;
+    overflow: auto;
 }
 
 .editing-header {
@@ -414,7 +415,7 @@
     display: flex;
     flex-direction: column;
     padding: 10px;
-    gap: 20px;
+    gap: 5px;
 }
 
 .tool {
@@ -438,7 +439,7 @@
 }
 
 .tool-icon {
-    font-size: 20px;
+    font-size: 15px;
     margin-bottom: 5px;
 }
 
@@ -446,7 +447,16 @@
     font-size: 12px;
     color: #666;
 }
-
+.fb-tool{
+    display: flex;
+    justify-content: space-between;
+    width: 100%;   
+}
+.flip-tool{
+    display: flex;
+    justify-content: space-between;
+    width: 100%; 
+}
 .scale-tools {
     display: flex;
     justify-content: space-between;

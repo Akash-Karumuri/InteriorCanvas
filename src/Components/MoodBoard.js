@@ -8,9 +8,20 @@ const MoodBoard = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [showSizeSelector, setShowSizeSelector] = useState(true);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 800 });
+  const [cropMode, setCropMode] = useState(false);  
+  const [savedBoards, setSavedBoards] = useState([]); 
+  const [boardName, setBoardName] = useState('My Mood Board'); 
+  
+  // History management for undo/redo
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const isPerformingUndoRedo = useRef(false);
+  
   const canvasRef = useRef(null);
   const dragItemRef = useRef(null);
   const dragStartPosRef = useRef({ x: 0, y: 0 });
+  const cropStartRef = useRef(null); 
+  const cropEndRef = useRef(null);
   
   // Sample product images
   const products = [
@@ -31,6 +42,76 @@ const MoodBoard = () => {
     { id: 15, img: 'https://www.globewest.com.au/media/catalog/product/S/O/SOF-VIT-ELIO2S-RIT-CPLOLNA-1_1_1.jpg?quality=80&fit=bounds&height=&width=&canvas=:', alt: 'Dark wooden headboard' },
   ];
 
+  // Save current state to history
+  const saveToHistory = (newItems) => {
+    if (isPerformingUndoRedo.current) return;
+    
+    // Create a deep copy of the items
+    const itemsCopy = JSON.parse(JSON.stringify(newItems || canvasItems));
+    
+    // If we're in the middle of history, remove all future states
+    const newHistory = history.slice(0, historyIndex + 1);
+    
+    // Add the new state to history
+    setHistory([...newHistory, itemsCopy]);
+    setHistoryIndex(newHistory.length);
+  };
+
+  // Handle undo operation
+  const handleUndo = () => {
+    if (historyIndex <= 0) return;
+    
+    isPerformingUndoRedo.current = true;
+    const newIndex = historyIndex - 1;
+    setHistoryIndex(newIndex);
+    setCanvasItems(history[newIndex]);
+    
+    // Deselect item when undoing
+    setSelectedItem(null);
+    setCropMode(false);
+    
+    setTimeout(() => {
+      isPerformingUndoRedo.current = false;
+    }, 0);
+  };
+
+  // Handle redo operation
+  const handleRedo = () => {
+    if (historyIndex >= history.length - 1) return;
+    
+    isPerformingUndoRedo.current = true;
+    const newIndex = historyIndex + 1;
+    setHistoryIndex(newIndex);
+    setCanvasItems(history[newIndex]);
+    
+    // Deselect item when redoing
+    setSelectedItem(null);
+    setCropMode(false);
+    
+    setTimeout(() => {
+      isPerformingUndoRedo.current = false;
+    }, 0);
+  };
+  
+  // Initialize history with empty state
+  useEffect(() => {
+    if (history.length === 0) {
+      saveToHistory([]);
+    }
+  }, []);
+
+  // Update selected item when canvas items change
+  useEffect(() => {
+    if (selectedItem) {
+      const updatedItem = canvasItems.find(item => item.id === selectedItem.id);
+      if (updatedItem) {
+        setSelectedItem(updatedItem);
+      } else {
+        setSelectedItem(null);
+      }
+    }
+  }, [canvasItems]);
+
   // Handle product drag start
   const handleDragStart = (e, product) => {
     const transferData = {
@@ -42,7 +123,10 @@ const MoodBoard = () => {
       y: 0,
       width: 150,
       height: 150,
-      zIndex: canvasItems.length + 1
+      zIndex: canvasItems.length + 1,
+      flipX: false,
+      flipY: false, 
+      cropParams: null 
     };
     e.dataTransfer.setData('application/json', JSON.stringify(transferData));
   };
@@ -65,7 +149,9 @@ const MoodBoard = () => {
         y: y - 75
       };
       
-      setCanvasItems(prev => [...prev, newItem]);
+      const newItems = [...canvasItems, newItem];
+      setCanvasItems(newItems);
+      saveToHistory(newItems);
     } catch (err) {
       console.error('Error adding item to canvas', err);
     }
@@ -79,19 +165,43 @@ const MoodBoard = () => {
   // Handle canvas item selection
   const handleCanvasItemClick = (e, item) => {
     e.stopPropagation();
+    
+    // If we're in crop mode, handle the crop operation
+    if (cropMode && selectedItem && selectedItem.id === item.id) {
+      return;
+    }
+    
     setSelectedItem(item);
+    // Exit crop mode when selecting a different item
+    setCropMode(false);
   };
 
   // Handle canvas click (deselect items)
   const handleCanvasClick = () => {
     setSelectedItem(null);
+    // Exit crop mode when clicking canvas
+    setCropMode(false);
   };
 
   // Handle item mouse down for dragging
   const handleMouseDown = (e, item) => {
     e.stopPropagation();
     
-    // Store the item and initial position
+    // Check if we're in crop mode
+    if (cropMode && selectedItem && selectedItem.id === item.id) {
+      // Start crop operation
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      cropStartRef.current = { x, y };
+      
+      // Add event listeners for mouse move and up during crop
+      document.addEventListener('mousemove', handleCropMove);
+      document.addEventListener('mouseup', handleCropEnd);
+      return;
+    }
+    
+    // Store the item and initial position for dragging
     dragItemRef.current = item;
     const { clientX, clientY } = e;
     dragStartPosRef.current = { x: clientX, y: clientY };
@@ -99,6 +209,75 @@ const MoodBoard = () => {
     // Add event listeners for mouse move and up
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  // Handle crop move
+  const handleCropMove = (e) => {
+    if (!cropMode || !selectedItem || !cropStartRef.current) return;
+    
+    const rect = document.querySelector(`.canvas-item.selected`).getBoundingClientRect();
+    const x = Math.max(0, Math.min(selectedItem.width, e.clientX - rect.left));
+    const y = Math.max(0, Math.min(selectedItem.height, e.clientY - rect.top));
+    
+    cropEndRef.current = { x, y };
+    
+    // Update visual crop selection
+    const cropSelection = document.querySelector('.crop-selection');
+    if (cropSelection) {
+      const left = Math.min(cropStartRef.current.x, cropEndRef.current.x);
+      const top = Math.min(cropStartRef.current.y, cropEndRef.current.y);
+      const width = Math.abs(cropEndRef.current.x - cropStartRef.current.x);
+      const height = Math.abs(cropEndRef.current.y - cropStartRef.current.y);
+      
+      cropSelection.style.left = `${left}px`;
+      cropSelection.style.top = `${top}px`;
+      cropSelection.style.width = `${width}px`;
+      cropSelection.style.height = `${height}px`;
+      cropSelection.style.display = 'block';
+    }
+  };
+
+  // Handle crop end
+  const handleCropEnd = (e) => {
+    if (!cropMode || !selectedItem || !cropStartRef.current || !cropEndRef.current) return;
+    
+    document.removeEventListener('mousemove', handleCropMove);
+    document.removeEventListener('mouseup', handleCropEnd);
+    
+    // Calculate crop parameters as normalized values (0 to 1)
+    const left = Math.min(cropStartRef.current.x, cropEndRef.current.x);
+    const top = Math.min(cropStartRef.current.y, cropEndRef.current.y);
+    const width = Math.abs(cropEndRef.current.x - cropStartRef.current.x);
+    const height = Math.abs(cropEndRef.current.y - cropStartRef.current.y);
+    
+    // Don't apply crop if selection is too small
+    if (width < 10 || height < 10) {
+      cropStartRef.current = null;
+      cropEndRef.current = null;
+      return;
+    }
+    
+    const cropParams = {
+      x: left / selectedItem.width,
+      y: top / selectedItem.height,
+      width: width / selectedItem.width,
+      height: height / selectedItem.height
+    };
+    
+    // Apply the crop
+    const newItems = canvasItems.map(item => 
+      item.id === selectedItem.id
+        ? { ...item, cropParams }
+        : item
+    );
+    
+    setCanvasItems(newItems);
+    saveToHistory(newItems);
+    
+    // Reset crop mode
+    setCropMode(false);
+    cropStartRef.current = null;
+    cropEndRef.current = null;
   };
 
   // Handle mouse move during drag
@@ -124,6 +303,11 @@ const MoodBoard = () => {
 
   // Handle mouse up after dragging
   const handleMouseUp = () => {
+    if (!dragItemRef.current) return;
+    
+    // Save state after drag completes
+    saveToHistory(canvasItems);
+    
     dragItemRef.current = null;
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', handleMouseUp);
@@ -133,32 +317,34 @@ const MoodBoard = () => {
   const handleBringForward = () => {
     if (!selectedItem) return;
     
-    setCanvasItems(items => {
+    const newItems = canvasItems.map(item => {
       // Find maximum z-index
-      const maxZ = Math.max(...items.map(item => item.zIndex || 0));
+      const maxZ = Math.max(...canvasItems.map(item => item.zIndex || 0));
       
-      return items.map(item => 
-        item.id === selectedItem.id
-          ? { ...item, zIndex: maxZ + 1 }
-          : item
-      );
+      return item.id === selectedItem.id
+        ? { ...item, zIndex: maxZ + 1 }
+        : item;
     });
+    
+    setCanvasItems(newItems);
+    saveToHistory(newItems);
   };
 
   // Send item backward
   const handleSendBackward = () => {
     if (!selectedItem) return;
     
-    setCanvasItems(items => {
+    const newItems = canvasItems.map(item => {
       // Find minimum z-index
-      const minZ = Math.min(...items.map(item => item.zIndex || 0));
+      const minZ = Math.min(...canvasItems.map(item => item.zIndex || 0));
       
-      return items.map(item => 
-        item.id === selectedItem.id
-          ? { ...item, zIndex: minZ - 1 }
-          : item
-      );
+      return item.id === selectedItem.id
+        ? { ...item, zIndex: minZ - 1 }
+        : item;
     });
+    
+    setCanvasItems(newItems);
+    saveToHistory(newItems);
   };
 
   // Clone item
@@ -173,32 +359,80 @@ const MoodBoard = () => {
       zIndex: Math.max(...canvasItems.map(item => item.zIndex || 0)) + 1
     };
     
-    setCanvasItems(prev => [...prev, newItem]);
+    const newItems = [...canvasItems, newItem];
+    setCanvasItems(newItems);
     setSelectedItem(newItem);
+    saveToHistory(newItems);
   };
 
   // Delete item
   const handleDelete = () => {
     if (!selectedItem) return;
-    setCanvasItems(items => items.filter(item => item.id !== selectedItem.id));
+    
+    const newItems = canvasItems.filter(item => item.id !== selectedItem.id);
+    setCanvasItems(newItems);
     setSelectedItem(null);
+    saveToHistory(newItems);
   };
 
   // Handle scale/resize
   const handleScale = (factor) => {
     if (!selectedItem) return;
     
-    setCanvasItems(items => 
-      items.map(item => 
-        item.id === selectedItem.id
-          ? { 
-              ...item, 
-              width: item.width * factor,
-              height: item.height * factor
-            }
-          : item
-      )
+    const newItems = canvasItems.map(item => 
+      item.id === selectedItem.id
+        ? { 
+            ...item, 
+            width: item.width * factor,
+            height: item.height * factor
+          }
+        : item
     );
+    
+    setCanvasItems(newItems);
+    saveToHistory(newItems);
+  };
+
+  // Handle horizontal flip
+  const handleFlipHorizontal = () => {
+    if (!selectedItem) return;
+    
+    const newItems = canvasItems.map(item => 
+      item.id === selectedItem.id
+        ? { ...item, flipX: !item.flipX }
+        : item
+    );
+    
+    setCanvasItems(newItems);
+    saveToHistory(newItems);
+  };
+
+  // Handle vertical flip
+  const handleFlipVertical = () => {
+    if (!selectedItem) return;
+    
+    const newItems = canvasItems.map(item => 
+      item.id === selectedItem.id
+        ? { ...item, flipY: !item.flipY }
+        : item
+    );
+    
+    setCanvasItems(newItems);
+    saveToHistory(newItems);
+  };
+
+  // Toggle crop mode
+  const handleToggleCrop = () => {
+    if (!selectedItem) return;
+    
+    // Toggle crop mode
+    setCropMode(prev => !prev);
+    
+    // Reset crop references when entering crop mode
+    if (!cropMode) {
+      cropStartRef.current = null;
+      cropEndRef.current = null;
+    }
   };
 
   // Select canvas size
@@ -212,6 +446,101 @@ const MoodBoard = () => {
     setShowSizeSelector(false);
   };
 
+  // Save the current board
+  const handleSaveBoard = () => {
+    const newBoard = {
+      id: Date.now(),
+      name: boardName,
+      items: canvasItems,
+      size: canvasSize
+    };
+    
+    setSavedBoards(prev => [...prev, newBoard]);
+    alert(`Board "${boardName}" saved successfully!`);
+  };
+
+  // Download the current board as an image
+  const handleDownloadBoard = () => {
+    if (!canvasRef.current || canvasItems.length === 0) {
+      alert('No items to download!');
+      return;
+    }
+    
+    try {
+      // Create a new canvas for rendering
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasSize.width;
+      canvas.height = canvasSize.height;
+      const ctx = canvas.getContext('2d');
+      
+      // Fill white background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Sort items by z-index
+      const sortedItems = [...canvasItems].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+      
+      // Promise to wait for all images to load
+      const loadPromises = sortedItems.map(item => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            // Apply transformations
+            ctx.save();
+            
+            // Position
+            ctx.translate(item.x + item.width / 2, item.y + item.height / 2);
+            
+            // Apply flips
+            if (item.flipX) ctx.scale(-1, 1);
+            if (item.flipY) ctx.scale(1, -1);
+            
+            // Draw image
+            if (item.cropParams) {
+              // Draw cropped image
+              const sx = item.cropParams.x * img.width;
+              const sy = item.cropParams.y * img.height;
+              const sWidth = item.cropParams.width * img.width;
+              const sHeight = item.cropParams.height * img.height;
+              
+              ctx.drawImage(
+                img, 
+                sx, sy, sWidth, sHeight,
+                -item.width / 2, -item.height / 2, item.width, item.height
+              );
+            } else {
+              // Draw full image
+              ctx.drawImage(img, -item.width / 2, -item.height / 2, item.width, item.height);
+            }
+            
+            ctx.restore();
+            resolve();
+          };
+          img.onerror = () => {
+            console.error(`Failed to load image: ${item.img}`);
+            resolve();
+          };
+          img.src = item.img;
+        });
+      });
+      
+      // When all images are loaded, convert canvas to image
+      Promise.all(loadPromises).then(() => {
+        const dataUrl = canvas.toDataURL('image/png');
+        
+        // Create download link
+        const link = document.createElement('a');
+        link.download = `${boardName.replace(/\s+/g, '-').toLowerCase()}.png`;
+        link.href = dataUrl;
+        link.click();
+      });
+    } catch (err) {
+      console.error('Error generating image', err);
+      alert('Failed to download image. Please try again.');
+    }
+  };
+
   return (
     <div className="style-sourcebook">
       {/* Header */}
@@ -221,10 +550,10 @@ const MoodBoard = () => {
           <p className='m-0'>SOURCEBOOK</p>
         </div>
         <div className="header-actions">
-          <button className="header-btn py-5">
+          <button className="header-btn py-5" onClick={handleDownloadBoard}>
             <i className="bi bi-download"></i> Download
           </button>
-          <button className="header-btn">
+          <button className="header-btn" onClick={handleSaveBoard}>
             <i className="bi bi-floppy"></i> Save
           </button>
           <button className="header-btn">Sign Up</button>
@@ -271,7 +600,7 @@ const MoodBoard = () => {
           </div>
 
           {/* Dropdowns */}
-          <div className="dropdown-filters mb-0 pb-0">
+          <div className="dropdown-filters">
             <select 
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
@@ -366,6 +695,17 @@ const MoodBoard = () => {
               onDragOver={handleDragOver}
               onClick={handleCanvasClick}
             >
+              {/* Board name input */}
+              <div className="board-name-container">
+                <input
+                  type="text"
+                  className="board-name-input"
+                  value={boardName}
+                  onChange={(e) => setBoardName(e.target.value)}
+                  placeholder="Name your mood board"
+                />
+              </div>
+
               {canvasItems.length === 0 && (
                 <div className="mood-board-placeholder">
                   <h2>CREATE A MOOD BOARD</h2>
@@ -376,7 +716,7 @@ const MoodBoard = () => {
               {canvasItems.map(item => (
                 <div
                   key={item.id}
-                  className={`canvas-item ${selectedItem && selectedItem.id === item.id ? 'selected' : ''}`}
+                  className={`canvas-item ${selectedItem && selectedItem.id === item.id ? 'selected' : ''} ${cropMode && selectedItem && selectedItem.id === item.id ? 'crop-mode' : ''}`}
                   style={{
                     position: 'absolute',
                     left: `${item.x}px`,
@@ -384,16 +724,55 @@ const MoodBoard = () => {
                     width: `${item.width}px`,
                     height: `${item.height}px`,
                     zIndex: item.zIndex || 1,
-                    boxShadow: selectedItem && selectedItem.id === item.id ? '0 0 0 2px #3498db' : 'none'
+                    boxShadow: selectedItem && selectedItem.id === item.id 
+                              ? cropMode ? '0 0 0 2px #ff6347' : '0 0 0 2px #3498db' 
+                              : 'none',
+                    cursor: cropMode && selectedItem && selectedItem.id === item.id ? 'crosshair' : 'move',
+                    overflow: 'hidden'
                   }}
                   onClick={(e) => handleCanvasItemClick(e, item)}
                   onMouseDown={(e) => handleMouseDown(e, item)}
                 >
-                  <img 
-                    src={item.img} 
-                    alt={item.alt} 
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
+                  <div 
+                    className="item-content"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      transform: `
+                        ${item.flipX ? 'scaleX(-1)' : ''}
+                        ${item.flipY ? 'scaleY(-1)' : ''}
+                      `,
+                      // Apply crop if available
+                      clipPath: item.cropParams 
+                        ? `inset(
+                            ${item.cropParams.y * 100}% 
+                            ${(1 - (item.cropParams.x + item.cropParams.width)) * 100}% 
+                            ${(1 - (item.cropParams.y + item.cropParams.height)) * 100}% 
+                            ${item.cropParams.x * 100}%
+                          )`
+                        : 'none'
+                    }}
+                  >
+                    <img 
+                      src={item.img} 
+                      alt={item.alt} 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  </div>
+                  
+                  {/* Crop selection overlay */}
+                  {cropMode && selectedItem && selectedItem.id === item.id && (
+                    <div 
+                      className="crop-selection"
+                      style={{
+                        position: 'absolute',
+                        display: 'none',
+                        border: '2px dashed white',
+                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                        pointerEvents: 'none'
+                      }}
+                    ></div>
+                  )}
                 </div>
               ))}
             </div>
@@ -404,6 +783,25 @@ const MoodBoard = () => {
         <div className="editing-panel">
           <div className="editing-header">Image Editing</div>
           <div className="editing-tools">
+            {/* Undo/Redo tools */}
+            <div className="undo-redo-tools">
+              <div 
+                className={`tool ${historyIndex <= 0 ? 'disabled' : ''}`}
+                onClick={handleUndo}
+              >
+                <span className="tool-icon"><i className="bi bi-arrow-counterclockwise"></i></span>
+                <span className="tool-name">Undo</span>
+              </div>
+              <div 
+                className={`tool ${historyIndex >= history.length - 1 ? 'disabled' : ''}`}
+                onClick={handleRedo}
+              >
+                <span className="tool-icon"><i className="bi bi-arrow-clockwise"></i></span>
+                <span className="tool-name">Redo</span>
+              </div>
+            </div>
+            
+            <div className='fb-tool'>
             <div 
               className={`tool ${!selectedItem ? 'disabled' : ''}`}
               onClick={handleBringForward}
@@ -418,20 +816,51 @@ const MoodBoard = () => {
               <span className="tool-icon">↓</span>
               <span className="tool-name">Backward</span>
             </div>
+            </div>
             <div 
               className={`tool ${!selectedItem ? 'disabled' : ''}`}
               onClick={handleClone}
             >
-              <span className="tool-icon">⟲</span>
-              <span className="tool-name">Copy</span>
+              <span className="tool-icon"><i className="bi bi-copy"></i></span>
+              <span className="tool-name">Duplicate</span>
             </div>
             <div 
               className={`tool ${!selectedItem ? 'disabled' : ''}`}
               onClick={handleDelete}
             >
-              <span className="tool-icon">✕</span>
+              <span className="tool-icon"><i className="bi bi-trash3"></i></span>
               <span className="tool-name">Delete</span>
             </div>
+            
+            {/* Flip horizontal tool */}
+            <div className='flip-tool'>
+              <div 
+              className={`tool ${!selectedItem ? 'disabled' : ''}`}
+              onClick={handleFlipHorizontal}
+            >
+              <span className="tool-icon">↔</span>
+              <span className="tool-name">Flip H</span>
+            </div>
+            
+            {/* Flip vertical tool */}
+            <div 
+              className={`tool ${!selectedItem ? 'disabled' : ''}`}
+              onClick={handleFlipVertical}
+            >
+              <span className="tool-icon">↕</span>
+              <span className="tool-name">Flip V</span>
+            </div>
+            </div>
+            
+            {/* Crop tool */}
+            <div 
+              className={`tool ${!selectedItem ? 'disabled' : ''} ${cropMode ? 'active' : ''}`}
+              onClick={handleToggleCrop}
+            >
+              <span className="tool-icon">◫</span>
+              <span className="tool-name">Crop</span>
+            </div>
+            
             <div className="scale-tools">
               <div 
                 className={`tool ${!selectedItem ? 'disabled' : ''}`}
